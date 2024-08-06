@@ -203,7 +203,7 @@ paths:
     post:
       description: >-
         Создание квартиры.
-        Квартира создается в статусе on modarate
+        Квартира создается в статусе created
       tags:
         - authOnly
       security:
