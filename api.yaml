@@ -1,0 +1,542 @@
+openapi: 3.0.0
+info:
+  title: Тестовое задание для отбора на Backend Bootcamp
+  version: 1.0.0
+servers:
+- url: /
+tags:
+- name: noAuth
+  description: "Доступно всем, авторизация не нужна"
+- name: authOnly
+  description: Доступно любому авторизированному
+- name: moderationsOnly
+  description: Доступно только для модераторов
+paths:
+  /dummyLogin:
+    get:
+      tags:
+      - noAuth
+      description: Упрощенный процесс получения токена для дальнейшего прохождения авторизации
+      parameters:
+      - name: user_type
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/UserType'
+      responses:
+        "200":
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "500":
+          description: Ошибка сервера
+          headers:
+            Retry-After:
+              description: "Время, через которое еще раз нужно сделать запрос"
+              required: false
+              style: simple
+              explode: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_500'
+  /login:
+    post:
+      tags:
+      - noAuth
+      description: Дополнительное задание. Процесс аутентификации путем передачи идентификатор+пароля пользователя и получения токена для дальнейшего прохождения авторизации
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/login_body'
+      responses:
+        "200":
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "400":
+          description: Невалидные данные
+        "404":
+          description: Пользователь не найден
+        "500":
+          description: Ошибка сервера
+          headers:
+            Retry-After:
+              description: "Время, через которое еще раз нужно сделать запрос"
+              required: false
+              style: simple
+              explode: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_500'
+  /register:
+    post:
+      tags:
+      - noAuth
+      description: Дополнительное задание. Регистрация нового пользователя
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/register_body'
+      responses:
+        "200":
+          description: Успешная регистрация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "400":
+          description: Невалидные данные
+        "500":
+          description: Ошибка сервера
+          headers:
+            Retry-After:
+              description: "Время, через которое еще раз нужно сделать запрос"
+              required: false
+              style: simple
+              explode: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_500'
+  /house/create:
+    post:
+      tags:
+      - moderationsOnly
+      description: Создание нового дома.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/house_create_body'
+      responses:
+        "200":
+          description: Успешно создан дом
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/House'
+        "400":
+          description: Невалидные данные ввода
+        "401":
+          description: Неавторизованный доступ
+        "500":
+          description: Ошибка сервера
+          headers:
+            Retry-After:
+              description: "Время, через которое еще раз нужно сделать запрос"
+              required: false
+              style: simple
+              explode: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_500'
+      security:
+      - bearerAuth: []
+  /house/{id}:
+    get:
+      tags:
+      - authOnly
+      description: "Получение квартир в выбранном доме. Для обычных пользователей возвращаются только квартиры в статусе approved, для модераторов - в любом статусе"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/HouseId'
+      responses:
+        "200":
+          description: Успешно получены квартиры в доме
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+        "400":
+          description: Невалидные данные ввода
+        "401":
+          description: Неавторизованный доступ
+        "500":
+          description: Ошибка сервера
+          headers:
+            Retry-After:
+              description: "Время, через которое еще раз нужно сделать запрос"
+              required: false
+              style: simple
+              explode: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_500'
+      security:
+      - bearerAuth: []
+  /house/{id}/subscribe:
+    post:
+      tags:
+      - authOnly
+      description: Дополнительное задание. Подписаться на уведомления о новых квартирах в доме.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/HouseId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/id_subscribe_body'
+      responses:
+        "200":
+          description: Успешно оформлена подписка
+        "400":
+          description: Невалидные данные ввода
+        "401":
+          description: Неавторизованный доступ
+        "500":
+          description: Ошибка сервера
+          headers:
+            Retry-After:
+              description: "Время, через которое еще раз нужно сделать запрос"
+              required: false
+              style: simple
+              explode: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_500'
+      security:
+      - bearerAuth: []
+  /flat/create:
+    post:
+      tags:
+      - authOnly
+      description: Создание квартиры. Квартира создается в статусе on modarate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/flat_create_body'
+      responses:
+        "200":
+          description: Успешно создана квартира
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flat'
+        "400":
+          description: Невалидные данные ввода
+        "401":
+          description: Неавторизованный доступ
+        "500":
+          description: Ошибка сервера
+          headers:
+            Retry-After:
+              description: "Время, через которое еще раз нужно сделать запрос"
+              required: false
+              style: simple
+              explode: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_500'
+      security:
+      - bearerAuth: []
+  /flat/update:
+    post:
+      tags:
+      - moderationsOnly
+      description: Обновление квартиры.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/flat_update_body'
+      responses:
+        "200":
+          description: Успешно обновлена квартира
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flat'
+        "400":
+          description: Невалидные данные ввода
+        "401":
+          description: Неавторизованный доступ
+        "500":
+          description: Ошибка сервера
+          headers:
+            Retry-After:
+              description: "Время, через которое еще раз нужно сделать запрос"
+              required: false
+              style: simple
+              explode: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_500'
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    UserId:
+      type: string
+      description: Идентификатор пользователя
+      format: uuid
+      example: cae36e0f-69e5-4fa8-a179-a52d083c5549
+    Address:
+      type: string
+      description: Адрес дома
+      example: "Лесная улица, 7, Москва, 125196"
+    Year:
+      minimum: 0
+      type: integer
+      description: Год постройки дома
+      example: 2000
+    Developer:
+      type: string
+      description: Застройщик
+      nullable: true
+      example: Мэрия города
+    House:
+      required:
+      - address
+      - id
+      - year
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/HouseId'
+        address:
+          $ref: '#/components/schemas/Address'
+        year:
+          $ref: '#/components/schemas/Year'
+        developer:
+          $ref: '#/components/schemas/Developer'
+        created_at:
+          $ref: '#/components/schemas/Date'
+        update_at:
+          $ref: '#/components/schemas/Date'
+      description: Дом
+    HouseId:
+      minimum: 1
+      type: integer
+      description: Идентификатор дома
+      example: 12345
+    Price:
+      minimum: 0
+      type: integer
+      description: Цена квартиры в у.е.
+      example: 10000
+    Rooms:
+      minimum: 1
+      type: integer
+      description: Количество комнат в квартире
+      example: 4
+    Flat:
+      required:
+      - house_id
+      - id
+      - price
+      - rooms
+      - status
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/FlatId'
+        house_id:
+          $ref: '#/components/schemas/HouseId'
+        price:
+          $ref: '#/components/schemas/Price'
+        rooms:
+          $ref: '#/components/schemas/Rooms'
+        status:
+          $ref: '#/components/schemas/Status'
+      description: Квартира
+    Status:
+      type: string
+      description: Статус квартиры
+      example: approved
+      enum:
+      - created
+      - approved
+      - declined
+      - on moderation
+    FlatId:
+      minimum: 1
+      type: integer
+      description: Идентификатор квартиры
+      example: 123456
+    Email:
+      type: string
+      description: Email пользователя
+      format: email
+      example: test@gmail.com
+    Password:
+      type: string
+      description: Пароль пользователя
+      example: Секретная строка
+    UserType:
+      type: string
+      description: Тип пользователя
+      example: moderator
+      enum:
+      - client
+      - moderator
+    Token:
+      type: string
+      description: Авторизационный токен
+      example: auth_token
+    Date:
+      type: string
+      description: Дата + время
+      format: date-time
+      example: 2017-07-21T17:32:28Z
+    inline_response_200:
+      type: object
+      properties:
+        token:
+          $ref: '#/components/schemas/Token'
+    inline_response_500:
+      required:
+      - message
+      type: object
+      properties:
+        message:
+          type: string
+          description: Описание ошибки
+          example: что-то пошло не так
+        request_id:
+          type: string
+          description: Идентификатор запроса. Предназначен для более быстрого поиска проблем.
+          example: g12ugs67gqw67yu12fgeuqwd
+        code:
+          type: integer
+          description: Код ошибки. Предназначен для классификации проблем и более быстрого решения проблем.
+          example: 12345
+    login_body:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        password:
+          $ref: '#/components/schemas/Password'
+    register_body:
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        password:
+          $ref: '#/components/schemas/Password'
+        user_type:
+          $ref: '#/components/schemas/UserType'
+    inline_response_200_1:
+      type: object
+      properties:
+        user_id:
+          $ref: '#/components/schemas/UserId'
+    house_create_body:
+      required:
+      - address
+      - year
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/Address'
+        year:
+          $ref: '#/components/schemas/Year'
+        developer:
+          $ref: '#/components/schemas/Developer'
+    inline_response_200_2:
+      required:
+      - flats
+      type: object
+      properties:
+        flats:
+          type: array
+          items:
+            $ref: '#/components/schemas/Flat'
+    id_subscribe_body:
+      required:
+      - email
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+    flat_create_body:
+      required:
+      - house_id
+      - price
+      - room
+      type: object
+      properties:
+        house_id:
+          $ref: '#/components/schemas/HouseId'
+        price:
+          $ref: '#/components/schemas/Price'
+        rooms:
+          $ref: '#/components/schemas/Rooms'
+    flat_update_body:
+      required:
+      - id
+      - price
+      - room
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/FlatId'
+        status:
+          $ref: '#/components/schemas/Status'
+  responses:
+    "400":
+      description: Невалидные данные ввода
+    "401":
+      description: Неавторизованный доступ
+    "5xx":
+      description: Ошибка сервера
+      headers:
+        Retry-After:
+          description: "Время, через которое еще раз нужно сделать запрос"
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/inline_response_500'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: "Авторизация по токену, который был получен в методах /dummyLogin или /login"
+      scheme: bearer
